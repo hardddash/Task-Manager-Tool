@@ -1,0 +1,11 @@
+# Virtual environments
+server/venv/
+client/node_modules/
+server/server/__pycache__/
+server/*.pyc
+__pycache__/
+*.pyc
+
+# IDE and editor-specific files
+.vscode/
+*.iml
