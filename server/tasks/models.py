@@ -6,7 +6,7 @@ from .__init__ import Status, Priority
 class Task(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    due_date = models.DateField()
+    due_date = models.DateField(null=True)
     status = models.CharField(max_length=20, choices=[(
         status.name, status.value) for status in Status])
     priority = models.CharField(max_length=20, choices=[(priority.name, priority.value) for priority in Priority],

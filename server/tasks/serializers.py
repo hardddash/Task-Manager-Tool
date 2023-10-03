@@ -23,6 +23,8 @@ class TaskSerializer(serializers.ModelSerializer):
 
         description = serializers.CharField(max_length=5000, required=True)
 
+        due_date = serializers.DateField(allow_null=True)
+
         status = serializers.ChoiceField(choices=[(
             status.name, status.value) for status in Status], default=Status.TO_DO.value)
 
