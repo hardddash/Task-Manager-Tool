@@ -8,10 +8,10 @@ import { CSS } from "@dnd-kit/utilities";
 interface Props {
   task: Task;
   deleteTask: (id: Id) => void;
-  updateTask: (id: Id, title: string) => void;
+//   updateTask: (id: Id, title: string) => void;
 }
 
-function TaskCard({ task, deleteTask, updateTask }: Props) {
+function TaskCard({ task, deleteTask, /* updateTask */ }: Props) {
   const [mouseIsOver, setMouseIsOver] = useState(false);
 
   const {
@@ -67,7 +67,7 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
         </p>
         {task.dueDate &&
             <p className="my-auto overflow-y-auto overflow-x-hidden whitespace-pre-wrap">
-            <small>{task.dueDate.toDateString()}</small>
+            <small>{task.dueDate}</small>
             </p>
         }
         {task.assigneeName && (

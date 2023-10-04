@@ -29,7 +29,7 @@ class TaskSerializer(serializers.ModelSerializer):
             status.name, status.value) for status in Status], default=Status.TO_DO.value)
 
         priority = serializers.ChoiceField(choices=[(
-            priority.name, priority.value) for priority in Priority])
+            priority.name, priority.value) for priority in Priority], default=Priority.LOW.value)
 
         user = serializers.PrimaryKeyRelatedField(
             queryset=User.objects.all(),

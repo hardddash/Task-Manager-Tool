@@ -9,6 +9,6 @@ class Task(models.Model):
     due_date = models.DateField(null=True)
     status = models.CharField(max_length=20, choices=[(
         status.name, status.value) for status in Status])
-    priority = models.CharField(max_length=20, choices=[(priority.name, priority.value) for priority in Priority],
-                                null=True)
+    priority = models.CharField(max_length=20, choices=[(
+        priority.name, priority.value) for priority in Priority])
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)

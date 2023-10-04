@@ -9,7 +9,7 @@ interface Props {
   column: Column;
 
   createTask: (columnId: Id) => void;
-  updateTask: (id: Id, content: string) => void;
+//   updateTask: (id: Id, content: string) => void;
   deleteTask: (id: Id) => void;
   tasks: Task[];
 }
@@ -19,7 +19,7 @@ function ColumnContainer({
   createTask,
   tasks,
   deleteTask,
-  updateTask,
+//   updateTask,
 }: Props) {
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
@@ -97,7 +97,7 @@ function ColumnContainer({
               key={task.id}
               task={task}
               deleteTask={deleteTask}
-              updateTask={updateTask}
+            //   updateTask={updateTask}
             />
           ))}
         </SortableContext>

@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { Column, Id, Task, Status, Priority } from "../types";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import API_BASE_URL from "../apiConfig";
+import { setTasks, addTask, updateTask, deleteTask } from "../slices/taskSlice";
+import { RootState } from "../store/store";
+import { Column, Id, Task, ServerTask, Status, Priority } from "../types";
 import ColumnContainer from "./ColumnContainer";
 import {
   DndContext,
@@ -30,38 +34,40 @@ const columns: Column[] = [
   },
 ];
 
-const defaultTasks: Task[] = [
-  {
-    id: "1",
-    columnId: Status.ToDo.toLowerCase(),
-    title: "List admin APIs for dashboard",
-    dueDate: new Date(),
-    status: Status.ToDo,
-    priority: Priority.Low,
-  },
-  {
-    id: "2",
-    columnId: Status.ToDo.toLowerCase(),
-    title:
-      "Develop user registration functionality with OTP delivered on SMS after email confirmation and phone number confirmation",
-    dueDate: new Date(),
-    status: Status.ToDo,
-    priority: Priority.High,
-  },
-  {
-    id: "3",
-    columnId: Status.InProgress.toLowerCase(),
-    title: "Conduct security testing",
-    dueDate: new Date(),
-    status: Status.ToDo,
-    priority: Priority.Medium,
-    assigneeId: "1",
-    assigneeName: "Dasha Harashchuk",
-  },
-];
+// const defaultTasks: Task[] = [
+//   {
+//     id: "1",
+//     columnId: Status.ToDo.toLowerCase(),
+//     title: "List admin APIs for dashboard",
+//     dueDate: new Date(),
+//     status: Status.ToDo,
+//     priority: Priority.Low,
+//   },
+//   {
+//     id: "2",
+//     columnId: Status.ToDo.toLowerCase(),
+//     title:
+//       "Develop user registration functionality with OTP delivered on SMS after email confirmation and phone number confirmation",
+//     dueDate: new Date(),
+//     status: Status.ToDo,
+//     priority: Priority.High,
+//   },
+//   {
+//     id: "3",
+//     columnId: Status.InProgress.toLowerCase(),
+//     title: "Conduct security testing",
+//     dueDate: new Date(),
+//     status: Status.ToDo,
+//     priority: Priority.Medium,
+//     assigneeId: "1",
+//     assigneeName: "Dasha Harashchuk",
+//   },
+// ];
 
 function KanbanBoard() {
-  const [tasks, setTasks] = useState<Task[]>(defaultTasks);
+  const dispatch = useDispatch();
+  const tasks = useSelector((state: RootState) => state.tasks).tasks;
+  console.log(tasks);
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
 
@@ -74,6 +80,40 @@ function KanbanBoard() {
       },
     })
   );
+
+  function mapStatus(statusString: string): Status {
+    const statusWithoutSpaces = statusString.replace(/\s/g, "");
+    return Status[statusWithoutSpaces as keyof typeof Status];
+  }
+
+  //
+  function mapPriority(priorityString: string): Priority {
+    return Priority[priorityString as keyof typeof Priority];
+  }
+
+  useEffect(() => {
+    console.log("inside");
+    fetch(`${API_BASE_URL}/api/tasks/`)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("data", data);
+        const tasks: Task[] = data.map((task: ServerTask) => ({
+          id: task.id,
+          columnId: task.status.toLowerCase(),
+          title: task.title,
+          description: task.description,
+          dueDate: task.due_date,
+          status: mapStatus(task.status),
+          priority: mapPriority(task.priority),
+          // TODO user mapping (assigneeId, assigneeName)
+        }));
+        console.log("mapper tasks", tasks);
+        dispatch(setTasks(tasks)); // Dispatch the transformed tasks
+      })
+      .catch((error) => {
+        console.error("Error fetching tasks:", error);
+      });
+  }, [dispatch]);
 
   return (
     <div
@@ -102,9 +142,9 @@ function KanbanBoard() {
                   key={col.id}
                   column={col}
                   createTask={createTask}
-                  deleteTask={deleteTask}
-                  updateTask={updateTask}
-                  tasks={tasks.filter((task) => task.columnId === col.id)}
+                  deleteTask={deleteTaskRedux}
+                  //   updateTask={updateTaskRedux}
+                  tasks={tasks.filter((task: Task) => task.columnId === col.id)}
                 />
               ))}
             </SortableContext>
@@ -117,8 +157,8 @@ function KanbanBoard() {
               <ColumnContainer
                 column={activeColumn}
                 createTask={createTask}
-                deleteTask={deleteTask}
-                updateTask={updateTask}
+                deleteTask={deleteTaskRedux}
+                // updateTask={updateTaskRedux}
                 tasks={tasks.filter(
                   (task) => task.columnId === activeColumn.id
                 )}
@@ -127,8 +167,8 @@ function KanbanBoard() {
             {activeTask && (
               <TaskCard
                 task={activeTask}
-                deleteTask={deleteTask}
-                updateTask={updateTask}
+                deleteTask={deleteTaskRedux}
+                // updateTask={updateTaskRedux}
               />
             )}
           </DragOverlay>,
@@ -140,28 +180,23 @@ function KanbanBoard() {
 
   function createTask(columnId: Id) {
     const newTask: Task = {
-      id: generateId(),
+      id: generateId(), // TODO remove generated id
       columnId,
       title: `Task ${tasks.length + 1}`,
+      description: "",
       priority: Priority.Low,
       status: Status.ToDo,
     };
 
-    setTasks([...tasks, newTask]);
+    dispatch(addTask(newTask));
   }
 
-  function deleteTask(id: Id) {
-    const newTasks = tasks.filter((task) => task.id !== id);
-    setTasks(newTasks);
-  }
+  //   function updateTaskRedux(id: Id, title: string) {
+  //     dispatch(updateTask({ id, title }));
+  //   }
 
-  function updateTask(id: Id, title: string) {
-    const newTasks = tasks.map((task) => {
-      if (task.id !== id) return task;
-      return { ...task, title };
-    });
-
-    setTasks(newTasks);
+  function deleteTaskRedux(id: Id) {
+    dispatch(deleteTask(id.toString()));
   }
 
   function onDragStart(event: DragStartEvent) {
@@ -209,32 +244,32 @@ function KanbanBoard() {
     if (!isActiveATask) return;
 
     // Im dropping a Task over another Task
-    if (isActiveATask && isOverATask) {
-      setTasks((tasks) => {
-        const activeIndex = tasks.findIndex((t) => t.id === activeId);
-        const overIndex = tasks.findIndex((t) => t.id === overId);
+    // if (isActiveATask && isOverATask) {
+    //   setTasks((tasks) => {
+    //     const activeIndex = tasks.findIndex((t) => t.id === activeId);
+    //     const overIndex = tasks.findIndex((t) => t.id === overId);
 
-        if (tasks[activeIndex].columnId !== tasks[overIndex].columnId) {
-          // Fix introduced after video recording
-          tasks[activeIndex].columnId = tasks[overIndex].columnId;
-          return arrayMove(tasks, activeIndex, overIndex - 1);
-        }
+    //     if (tasks[activeIndex].columnId !== tasks[overIndex].columnId) {
+    //       // Fix introduced after video recording
+    //       tasks[activeIndex].columnId = tasks[overIndex].columnId;
+    //       return arrayMove(tasks, activeIndex, overIndex - 1);
+    //     }
 
-        return arrayMove(tasks, activeIndex, overIndex);
-      });
-    }
+    //     return arrayMove(tasks, activeIndex, overIndex);
+    //   });
+    // }
 
     const isOverAColumn = over.data.current?.type === "Column";
 
     // Im dropping a Task over a column
-    if (isActiveATask && isOverAColumn) {
-      setTasks((tasks) => {
-        const activeIndex = tasks.findIndex((t) => t.id === activeId);
+    // if (isActiveATask && isOverAColumn) {
+    //   setTasks((tasks) => {
+    //     const activeIndex = tasks.findIndex((t) => t.id === activeId);
 
-        tasks[activeIndex].columnId = overId;
-        return arrayMove(tasks, activeIndex, activeIndex);
-      });
-    }
+    //     tasks[activeIndex].columnId = overId;
+    //     return arrayMove(tasks, activeIndex, activeIndex);
+    //   });
+    // }
   }
 }
 
